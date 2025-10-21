@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { tokenize } from '../utils/tokenize';
 import Vocab from '../utils/vocab';
+import { detectSentences, groupBySentence } from '../utils/sentenceBoundary';
 import type { Token, TokenType } from '../utils/tokenTypes';
 
 type TokenizationMode = 'basic' | 'advanced';
@@ -49,7 +50,12 @@ const TokenizationComponent: React.FC = () => {
   const input_ids = includeIds ? vocab.encodeTokens(tokens) : undefined;
   // build a token_map when ids are included for traceability
   const token_map = includeIds && input_ids ? tokens.map((t, i) => ({ value: t.value, type: t.type, id: input_ids[i] })) : undefined;
-  const outputObj: any = { tokens, count: tokens.length };
+  
+  // Detect sentence boundaries and group tokens by sentence
+  const tokensWithSentences = detectSentences(tokens);
+  const sentences = groupBySentence(tokensWithSentences);
+  
+  const outputObj: any = { tokens, count: tokens.length, sentences: sentences };
   if (includeIds) {
     outputObj.input_ids = input_ids;
     outputObj.token_map = token_map;
@@ -118,6 +124,8 @@ const TokenizationComponent: React.FC = () => {
         ) : (
           <>
             <strong>Token count:</strong> {tokens.length}
+            <br />
+            <strong>Sentence count:</strong> {sentences.length}
             <br />
             <strong>Sample tokens:</strong> {formatSampleTokens(tokens)}
             <br />
